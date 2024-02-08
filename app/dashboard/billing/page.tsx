@@ -1,11 +1,17 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { CheckCircle2 } from "lucide-react";
 import prisma from "@/app/libs/db";
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import { getStripeSession } from "@/lib/stripe";
+import { getStripeSession, stripe } from "@/lib/stripe";
 import { redirect } from "next/navigation";
-import { StripeSubscriptionButton } from "@/components/SubmiteButton";
+import { StripePortal, StripeSubscriptionButton } from "@/components/SubmiteButton";
 
 const featureItems = [
   {
@@ -48,9 +54,8 @@ async function getData(userId: string) {
   return data;
 }
 
-
 const BillingPage = async () => {
-  const {getUser} = getKindeServerSession()
+  const { getUser } = getKindeServerSession();
   const user = await getUser();
   const data = await getData(user?.id as string);
 
@@ -58,13 +63,13 @@ const BillingPage = async () => {
     "use server";
 
     const dbUser = await prisma.user.findUnique({
-      where:{
-        id: user?.id
+      where: {
+        id: user?.id,
       },
-      select:{
-        stripeCustomerId: true
-      }
-    })
+      select: {
+        stripeCustomerId: true,
+      },
+    });
 
     if (!dbUser?.stripeCustomerId) {
       throw new Error("Unable to get customer id");
@@ -77,6 +82,47 @@ const BillingPage = async () => {
     });
 
     return redirect(subscriptionUrl);
+  }
+
+  async function createCustomerPortal(){
+    'use server'
+
+    const session = await stripe.billingPortal.sessions.create({
+      customer: data?.user.stripeCustomerId as string,
+      return_url: `http://localhost:3000/dashboard`,
+    })
+
+    return redirect(session.url)
+  }
+
+  if (data?.status === "active") {
+    return (
+      <div className="grid items-start gap-8">
+        <div className="flex items-center justify-between px-2">
+          <div className="grid ga-1">
+            <h1 className="text-3xl md:text-4xl">Subscription</h1>
+            <p className="text-lg text-muted-foreground">
+              Settings regarding yout subscription
+            </p>
+          </div>
+        </div>
+        <Card className="w-full lg:w-2/3">
+          <CardHeader>
+            <CardTitle>Edit Subscription</CardTitle>
+            <CardDescription>
+              Click on the button nelow, this will giove you the opportunity to
+              change your payment details and view your statement at the same time.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent>
+            <form action={createCustomerPortal}>
+              <StripePortal/>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
   return (
     <div className="max-w-md space-y-4 mx-auto">
@@ -113,7 +159,7 @@ const BillingPage = async () => {
           </ul>
 
           <form className="w-full" action={createSubscription}>
-            <StripeSubscriptionButton/>
+            <StripeSubscriptionButton />
           </form>
         </div>
       </Card>
