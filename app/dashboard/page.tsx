@@ -47,7 +47,7 @@ const Dashboard = async() => {
 
       <div></div>
     )}
-  </div>;
+  </div>
 }
 
 export default Dashboard
