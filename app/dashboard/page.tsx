@@ -4,6 +4,8 @@ import prisma from '../libs/db';
 import { getKindeServerSession } from '@kinde-oss/kinde-auth-nextjs/server';
 import { Edit, File, Trash } from 'lucide-react';
 import { Card } from "@/components/ui/card";
+import { revalidatePath } from 'next/cache';
+import { TrashDelete } from '@/components/SubmiteButton';
 
 async function getData(userId: string) {
   const data = await prisma.note.findMany({
@@ -21,6 +23,20 @@ const Dashboard = async () => {
   const { getUser } = getKindeServerSession();
   const user = await getUser();
   const data = await getData(user?.id as string);
+
+  async function deleteNote(formdata: FormData){
+    'use server'
+    const noteId = formdata.get('noteId') as string
+
+    await prisma.note.delete({
+      where:{
+        id: noteId,
+      }
+    })
+
+    revalidatePath('/dashboard')
+
+  }
 
   return (
     <div className="grid items-start gap-y-8">
@@ -74,10 +90,10 @@ const Dashboard = async () => {
                     </Button>
                   </Link>
 
-                  <form action="">
-                    <Button variant={'destructive'} size='icon'>
-                      <Trash className='h-4 w-4'/>
-                    </Button>
+                  <form action={deleteNote}>
+                    <input type="hidden" name='noteId' value={item.id} />
+                    
+                    <TrashDelete/>
                   </form>
                 </div>
               </Card>

@@ -2,7 +2,7 @@
 
 import { useFormStatus } from "react-dom";
 import { Button } from "./ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash } from "lucide-react";
 
 export const SubmiteButton = () => {
   const { pending } = useFormStatus();
@@ -48,6 +48,28 @@ export function StripePortal(){
       ) : (
         <Button type="submit" className="w-fit">
           View payment
+        </Button>
+      )}
+    </>
+  );
+}
+
+export function TrashDelete() {
+  const { pending } = useFormStatus();
+  return (
+    <>
+      {pending ? (
+        <Button disabled variant="destructive" size="icon">
+          <Loader2 className="w-4 h-4 animate-spin" />
+        </Button>
+      ) : (
+        <Button
+          type="submit"
+          
+          variant="destructive"
+          size="icon"
+        >
+          <Trash className="h-4 w-4" />
         </Button>
       )}
     </>
